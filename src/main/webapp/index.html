@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>图书管理系统</title>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+
+<script src="./scripts/boot.js" type="text/javascript"></script>
+
+<script src="./scripts/core.js" type="text/javascript"></script>
+
+<style type="text/css">
+html, body {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+.logo {
+	font-family: "微软雅黑", "Helvetica Neue", ​Helvetica, ​Arial, ​sans-serif;
+	font-size: 28px;
+	font-weight: bold;
+	cursor: default;
+	position: absolute;
+	top: 25px;
+	left: 14px;
+	line-height: 28px;
+	color: #444;
+}
+
+.mini-layout-region-south img {
+	vertical-align: top;
+}
+</style>
+</head>
+<body>
+	<div class="mini-layout" style="width: 100%; height: 100%;">
+		<div title="north" region="north" class="app-header"
+			bodyStyle="overflow:hidden;" height="80" showHeader="false"
+			showSplit="false">
+			<div class="logo">图书管理系统</div>
+		</div>
+		<div showHeader="false" region="south"
+			style="border: 0; text-align: center;" height="25" showSplit="false">
+			Copyright © 岗前实训版权所有</div>
+		<div region="west" title="在线演示" showHeader="true"
+			bodyStyle="padding-left:1px;" showSplitIcon="true" width="230"
+			minWidth="100" maxWidth="350">
+			<ul id="demoTree" class="mini-tree" showTreeIcon="true"
+				style="width: 100%; height: 100%;" enableHotTrack="true"
+				onbeforeexpand="onBeforeExpand">
+				<li><a href="./pages/bookinfo/bookinfolist.html" target="main">图书信息管理</a></li>
+				<li><a href="./pages/borrowinfo/borrowinfolist.html" target="main">借阅信息管理</a></li>
+			</ul>
+		</div>
+		<div title="center" region="center" style="border: 0;">
+			<div id="mainTabs" class="mini-tabs" activeIndex="0"
+				style="width: 100%; height: 100%;">
+				<div title="信息管理">
+					<iframe onload="onIFrameLoad()" src="./pages/bookinfo/bookinfolist.html" id="mainframe"
+						frameborder="0" name="main" style="width: 100%; height: 100%;"
+						border="0"></iframe>
+				</div>
+			</div>
+		</div>
+
+
+	</div>
+</body>
+</html>
+<script type="text/javascript">
+    mini.parse();
+    function onBeforeExpand(e) {
+        var tree = e.sender;
+        var nowNode = e.node;
+        var level = tree.getLevel(nowNode);
+
+        var root = tree.getRootNode();        
+        tree.cascadeChild(root, function (node) {
+            if (tree.isExpandedNode(node)) {
+                var level2 = tree.getLevel(node);
+                if (node != nowNode && !tree.isAncestor(node, nowNode) && level == level2) {
+                    tree.collapseNode(node, true);
+                }
+            }
+        });
+
+    }
+    
+
+    function onIFrameLoad() {
+
+        //alert(1);
+
+        // if (!CanSet) return;
+        var mainTabs = mini.get("mainTabs");
+        if (mainTabs) {
+            mainTabs.setActiveIndex(0);
+        }
+
+        //url#src=...html
+        var iframe = document.getElementById("mainframe");
+        var src = "";
+        try {
+            var url = iframe.contentWindow.location.href;
+            var ss = url.split("/");
+
+            var index = ss.indexOf("demo");
+            if (index != -1) {
+                ss = ss.slice(index+1, ss.length);
+                src = ss.join('/');
+            }
+
+        } catch (e) {
+        }
+
+    }
+       
+</script>

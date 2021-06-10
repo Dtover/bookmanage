@@ -1,0 +1,279 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>DataGrid 数据表格</title>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<link href="../../res/css/demo.css" rel="stylesheet" type="text/css" />
+<script src="../../scripts/boot.js" type="text/javascript"></script>
+<style type="text/css">
+	.Edit_Button, 
+	.Delete_Button, 
+	.Borrow_Button, 
+	.Show_Button {
+		font-size:11px;
+		color:#1B3F91;
+		margin-right:5px;          
+	}
+</style>
+
+</head>
+<body>
+	<h1>图书信息管理</h1>
+
+	<div style="width: 100%">
+		<div class="mini-toolbar" style="border-bottom: 0; padding: 0px;">
+			<table style="width: 100%;">
+				<tr>
+					<td style="width: 100%;">
+						<a class="mini-button" iconCls="icon-add" onclick="add()">增加信息</a> 
+						<a class="mini-button" iconCls="icon-remove" onclick="remove()">批量删除</a>
+					</td>
+
+					<td style="white-space: nowrap;">
+						<input id="focustype" class="mini-combobox" showNullItem="true" emptyText="请选择类别" nullItemText="全部" url="../../data/booktype.txt"/>
+						<input id="context" class="mini-textbox" emptyText="请输入书名" style="width: 150px;" onenter="onKeyEnter" /> 
+						<a class="mini-button" onclick="search()">查询</a>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	<div id="bookinfo" class="mini-datagrid" style="width: 100%; height: 350px;" allowResize="true"
+		url="../../bookinfolistaction" idField="bookid" multiSelect="true">
+		<div property="columns">
+			<div type="checkcolumn"></div>
+			<div field="bookid" width="100" headerAlign="center" align="center" allowSort="true">图书编号</div>
+			<div field="bookname" width="120" headerAlign="center" align="center" allowSort="true">图书名称</div>
+			<div field="publisher" width="120" headerAlign="center" align="center"	allowSort="true">出版社</div>
+			<div field="author" width="100" headerAlign="center" align="center" allowSort="true">作者</div>
+			<div field="booktype" width="50" headerAlign="center" align="center" renderer="onTypeRenderer" allowSort="true">图书类别</div>
+			<div field="remain" width="60" headerAlign="center" align="center" renderer="onRemainRenderer" allowSort="true">剩余数量</div>
+			<div name="action" width="120" headerAlign="center" align="center" renderer="onActionRenderer">操作</div>	
+		</div>
+	</div>
+
+
+	<script type="text/javascript">
+        mini.parse();
+
+        var grid = mini.get("bookinfo");
+        grid.load();
+
+        function add() {
+
+            mini.open({
+                targetWindow: window,
+
+                url: "bookinfoadd.html",
+                title: "新增图书", 
+                width: 600, 
+                height: 300,
+                onload: function () {
+                    var iframe = this.getIFrameEl();
+                    var data = {
+                    		action: "new" 
+                    	};
+                    iframe.contentWindow.SetData(data);
+                },
+                ondestroy: function (action) {
+
+                	var msg = action.split("-");
+                	grid.reload();
+                	if(msg.length > 1){
+                		mini.showTips({
+                			content: msg[1],			
+                			state: "success",
+                			x: 'center',
+                			y: 'top',
+                			timeout: 3000
+                		})
+                	}
+                }
+            });
+        }
+
+        function editRow(id) {
+			mini.open({
+				
+                targetWindow: window,
+				url: "../../pages/bookinfo/bookinfoedit.html",
+					title: "编辑图书", 
+					width: 600, 
+					height: 300,
+					onload: function () {
+						var iframe = this.getIFrameEl();
+						var data = { 
+								action: "edit",
+								id: id
+							};
+						iframe.contentWindow.SetData(data);
+
+					},
+					ondestroy: function (action) {
+						//var iframe = this.getIFrameEl();
+
+						grid.reload();
+
+					}
+				});
+            
+        }
+
+        function showDetail(id) {
+			mini.open({
+				
+                targetWindow: window,
+				url: "../../pages/bookinfo/bookinfoedit.html",
+					title: "图书详情", 
+					width: 600, 
+					height: 300,
+					onload: function () {
+						var iframe = this.getIFrameEl();
+						var data = { 
+								action: "detail",
+								id: id
+							};
+						iframe.contentWindow.SetData(data);
+
+					},
+					ondestroy: function (action) {
+
+						grid.reload();
+
+					}
+				});
+            
+        }
+
+        function remove() {
+            
+            var rows = grid.getSelecteds();
+            if (rows.length > 0) {
+            	mini.confirm("确定删除记录？", "确定？",
+                        function (action) {
+                            if (action == "ok") {
+								var ids = [];
+								for (var i = 0, l = rows.length; i < l; i++) {
+									var r = rows[i];
+									ids.push(r.bookid);
+								}
+								var id = ids.join(',');
+								grid.loading("操作中，请稍后......");
+								$.ajax({
+									url: "../../bookinfodeleteaction?bookid=" +id,
+									success: function (data) {
+										var json = mini.decode(data, false);
+										if(json.state == "1"){
+											mini.showTips({
+												content: json.msg,			
+												state: "success",
+												x: 'center',
+												y: 'top',
+												timeout: 3000
+											})
+										}else{
+											mini.alert(json.msg);
+										}
+										grid.reload();
+									},
+									error: function () {
+									}
+								});
+                            }
+                        }
+                    );
+            } else {
+                mini.alert("请选中一条记录");
+            }
+        }
+
+        function borrowBook(bookid) {
+        	
+            var row = grid.getSelected();
+            if(row.remain > 0){
+				mini.open({
+					targetWindow: window,
+
+					url: ".././borrowinfo/borrowinfoadd.html",
+					title: "图书借阅", 
+					width: 600, 
+					height: 400,
+					onload: function () {
+						var borrowid = "";
+						$.ajax({
+							async: false,
+							url: "../../borrowinfolistaction?method=getBorrowId",
+							success: function (text) {
+								borrowid = text;
+							},
+						});
+						var iframe = this.getIFrameEl();
+						var data = {
+								borrowid: borrowid,
+								bookid: bookid
+							};
+						iframe.contentWindow.SetData(data);
+					},
+					ondestroy: function (action) {
+
+						var msg = action.split("-");
+						grid.reload();
+						if(msg.length > 1){
+							mini.showTips({
+								content: msg[1],			
+								state: "success",
+								x: 'center',
+								y: 'top',
+								timeout: 3000
+							})
+						}
+					}
+				});
+            }else{
+            	mini.alert("库存为零，无法借阅");
+            }
+        }
+        
+        function onRemainRenderer(e){
+        	if(e.row.remain <= 10){
+        		e.cellStyle = "font-weight: bold; color: red;";
+        	}	
+        	return e.value;
+        }
+        
+        function onActionRenderer(e) {
+            var record = e.record;
+            var bookid = record.bookid;
+
+            var s = '<a class="Edit_Button" href="javascript:editRow(\'' + bookid + '\')">修改</a>'
+                    + '<a class="Delete_Button" href="javascript:remove(\'' + bookid + '\')">删除</a>'
+                    + '<a class="Borrow_Button" href="javascript:borrowBook(\'' + bookid + '\')">借阅</a>'
+                    + '<a class="Show_Button" href="javascript:showDetail(\'' + bookid + '\')">详情</a>'
+                       
+            return s;
+        }
+        
+        var booktypes = [{ "id": "1", "text": "文学类"},{ "id": "2", "text": "科技类"},{ "id": "3", "text": "艺术类"},{ "id": "4", "text": "教育类"},{ "id": "5", "text": "其他"},]
+      	function onTypeRenderer(e){
+        	for(var i = 0, l = booktypes.length; i < l; i++){
+        		var t = booktypes[i];
+        		if(t.id == e.value) return t.text;
+        	}
+        	return "";
+        }  
+        
+        function search() {
+            var context = mini.get("context").getValue();
+            var focustype = mini.get("focustype").getValue();
+            grid.load({ 
+            	context: context,
+            	focustype: focustype
+            });
+        }
+        function onKeyEnter(e) {
+            search();
+        }
+    </script>
+</body>
+</html>
